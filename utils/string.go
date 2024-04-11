@@ -9,6 +9,7 @@ import (
 	"math/rand"
 	"reflect"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -19,6 +20,19 @@ var (
 
 func init() {
 	rand.New(rand.NewSource(time.Now().UnixNano()))
+}
+
+func DeleteSpecialChar(str string) string {
+	if len(str) == 0 {
+		return ""
+	}
+	str = strings.ReplaceAll(str, "\n", "")
+	str = strings.ReplaceAll(str, "\t", "")
+	str = strings.ReplaceAll(str, "\\", "")
+	str = strings.ReplaceAll(str, "-", "")
+	str = strings.ReplaceAll(str, " ", "")
+	str = strings.ReplaceAll(str, "/", "")
+	return str
 }
 
 func ValueMd5(value interface{}) string {
