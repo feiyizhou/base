@@ -15,15 +15,15 @@ import (
 // HttpPostJson 以json格式发送post请求
 func HttpPostJson(ctx context.Context, url string, headers map[string]string, body interface{}, timeout ...time.Duration) ([]byte, error) {
 	if body == nil {
-		return nil, fmt.Errorf("The body of post request must not be null ")
+		return nil, fmt.Errorf("the body of post request must not be null ")
 	}
 	byteArr, err := json.Marshal(body)
 	if err != nil {
-		return nil, errors.New(fmt.Sprintf("参数json格式化异常，异常原因：%v，context：%v", err, ctx))
+		return nil, fmt.Errorf("参数json格式化异常，异常原因：%v，context：%v", err, ctx)
 	}
 	request, err := http.NewRequest(http.MethodPost, url, bytes.NewReader(byteArr))
 	if err != nil {
-		return nil, errors.New(fmt.Sprintf("新建请求体异常，异常原因：%v，context：%v", err, ctx))
+		return nil, fmt.Errorf("新建请求体异常，异常原因：%v，context：%v", err, ctx)
 	}
 	for k, v := range headers {
 		request.Header.Set(k, v)
@@ -43,7 +43,7 @@ func HttpGet(ctx context.Context, url string, headers map[string]string, params 
 	}
 	request, err := http.NewRequest(http.MethodGet, url, nil)
 	if err != nil {
-		return nil, errors.New(fmt.Sprintf("新建请求体异常，异常原因：%v，context：%v", err, ctx))
+		return nil, fmt.Errorf("新建请求体异常，异常原因：%v，context：%v", err, ctx)
 	}
 	for k, v := range headers {
 		request.Header.Set(k, v)
@@ -61,7 +61,7 @@ func do(ctx context.Context, request *http.Request, timeout ...time.Duration) ([
 	}
 	response, err := client.Do(request)
 	if err != nil {
-		return nil, errors.New(fmt.Sprintf("响应异常，异常原因：%v，context：%v", err, ctx))
+		return nil, fmt.Errorf("响应异常，异常原因：%v，context：%v", err, ctx)
 	}
 	if response.StatusCode != http.StatusOK {
 		return nil, errors.New("请求异常")
@@ -69,7 +69,7 @@ func do(ctx context.Context, request *http.Request, timeout ...time.Duration) ([
 	defer response.Body.Close()
 	data, err := io.ReadAll(response.Body)
 	if err != nil {
-		return nil, errors.New(fmt.Sprintf("读取响应数据，异常原因：%v，context：%v", err, ctx))
+		return nil, fmt.Errorf("读取响应数据，异常原因：%v，context：%v", err, ctx)
 	}
 	return data, err
 }

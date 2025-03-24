@@ -7,13 +7,13 @@ import (
 	"crypto/md5"
 	"encoding/json"
 	"fmt"
-	"github.com/pkg/errors"
 	"io"
 	"io/fs"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/pkg/errors"
 )
 
 const (
@@ -42,7 +42,7 @@ func IsExist(path string) bool {
 }
 
 func CreateDir(path string) error {
-	if IsExist(path) == false {
+	if !IsExist(path) {
 		err := os.MkdirAll(path, os.ModePerm)
 		if err != nil {
 			return err
@@ -89,7 +89,7 @@ func AllFilesInDir(path string) ([]FileInfo, error) {
 }
 
 func CountDirFiles(dirName string) int {
-	if IsExist(dirName) == false {
+	if !IsExist(dirName) {
 		return 0
 	}
 	if !IsDir(dirName) {
@@ -133,8 +133,11 @@ func CreateFileByAllPath(fileName string) error {
 		return err
 	}
 	file, err := os.OpenFile(fileName, os.O_CREATE|os.O_RDWR|os.O_APPEND, 0644)
+	if err != nil {
+		return err
+	}
 	defer file.Close()
-	return err
+	return nil
 }
 
 func MkFileFullPathDir(fileName string) error {
@@ -168,10 +171,10 @@ func Tar(src, dst, trimPrefix string) error {
 			return nil
 		}
 		fr, err := os.Open(path)
-		defer fr.Close()
 		if err != nil {
 			return err
 		}
+		defer fr.Close()
 		path = strings.TrimPrefix(path, trimPrefix)
 		fmt.Println(strings.TrimPrefix(path, string(filepath.Separator)))
 		hdr.Name = strings.TrimPrefix(path, string(filepath.Separator))
@@ -244,7 +247,7 @@ func ReadFileToBytes(path string) ([]byte, error) {
 		return nil, err
 	}
 	defer file.Close()
-	content, err := ioutil.ReadAll(file)
+	content, err := io.ReadAll(file)
 	if err != nil {
 		return nil, err
 	}
@@ -274,7 +277,7 @@ func ReadFileToLines(path string) ([]string, error) {
 }
 
 // WriteToFile 追加内容到现存文件中
-func WriteToFile(content interface{}, path string) error {
+func WriteToFile(content any, path string) error {
 	bytes, err := json.Marshal(content)
 	if err != nil {
 		return err
@@ -285,7 +288,7 @@ func WriteToFile(content interface{}, path string) error {
 			return err
 		}
 	}
-	if err := ioutil.WriteFile(path, bytes, FileMode0644); err != nil {
+	if err := os.WriteFile(path, bytes, FileMode0644); err != nil {
 		return err
 	}
 	return nil
@@ -294,7 +297,7 @@ func WriteToFile(content interface{}, path string) error {
 // AppendStrToFile 在已经存在的文件中，添加字符串
 func AppendStrToFile(path, content string) (err error) {
 	if !IsExist(path) {
-		err = fmt.Errorf("File is not exist, file path: %s ", path)
+		err = fmt.Errorf("file is not exist, file path: %s ", path)
 	} else {
 		var file *os.File
 		file, err = os.OpenFile(path, os.O_APPEND|os.O_RDWR, 0644)

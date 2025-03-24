@@ -35,13 +35,17 @@ func DeleteSpecialChar(str string) string {
 	return str
 }
 
-func ValueMd5(value interface{}) string {
+func ValueMd5(value any) (string, error) {
 	h := md5.New()
-	_, err := io.WriteString(h, InterfaceToStr(value))
+	str, err := InterfaceToStr(value)
 	if err != nil {
-		return ""
+		return "", err
 	}
-	return fmt.Sprintf("%x", h.Sum(nil))
+	_, err = io.WriteString(h, str)
+	if err != nil {
+		return "", err
+	}
+	return fmt.Sprintf("%x", h.Sum(nil)), nil
 }
 
 // RandCharStr 生成随机字符串
@@ -58,65 +62,43 @@ func RandCharStr(n int) string {
 func RandNumStr(n int) string {
 	result := make([]byte, n)
 	//r := rand.New(rand.NewSource(time.Now().UnixNano()))
-	for i := 0; i < n; i++ {
+	for i := range n {
 		result[i] = NumArr[rand.Int31()%int32(len(NumArr))]
 	}
 	return string(result)
 }
 
 // InterfaceToStr interface转string
-func InterfaceToStr(value interface{}) string {
+func InterfaceToStr(value interface{}) (string, error) {
 	// interface 转 string
 	var str string
 	if value == nil {
-		return str
+		return str, nil
 	}
-	switch value.(type) {
-	case float64:
-		ft := value.(float64)
-		str = strconv.FormatFloat(ft, 'f', -1, 64)
-	case float32:
-		ft := value.(float32)
-		str = strconv.FormatFloat(float64(ft), 'f', -1, 64)
-	case int:
-		it := value.(int)
-		str = strconv.Itoa(it)
-	case uint:
-		it := value.(uint)
-		str = strconv.Itoa(int(it))
-	case int8:
-		it := value.(int8)
-		str = strconv.Itoa(int(it))
-	case uint8:
-		it := value.(uint8)
-		str = strconv.Itoa(int(it))
-	case int16:
-		it := value.(int16)
-		str = strconv.Itoa(int(it))
-	case uint16:
-		it := value.(uint16)
-		str = strconv.Itoa(int(it))
-	case int32:
-		it := value.(int32)
-		str = strconv.Itoa(int(it))
-	case uint32:
-		it := value.(uint32)
-		str = strconv.Itoa(int(it))
-	case int64:
-		it := value.(int64)
-		str = strconv.FormatInt(it, 10)
-	case uint64:
-		it := value.(uint64)
-		str = strconv.FormatUint(it, 10)
-	case string:
-		str = value.(string)
-	case []byte:
-		str = string(value.([]byte))
+	v := reflect.ValueOf(value)
+	switch v.Kind() {
+	case reflect.Float64, reflect.Float32:
+		return fmt.Sprintf("%f", v.Float()), nil
+	case reflect.Int, reflect.Uint,
+		reflect.Int8, reflect.Uint8,
+		reflect.Int16, reflect.Uint16,
+		reflect.Int32, reflect.Uint32,
+		reflect.Int64, reflect.Uint64:
+		return fmt.Sprintf("%d", v.Int()), nil
+	case reflect.String:
+		return v.String(), nil
+	case reflect.Bool:
+		return fmt.Sprintf("%t", v.Bool()), nil
+	case reflect.Slice:
+		if v.Type().Elem().Kind() == reflect.Uint8 {
+			return string(v.Bytes()), nil
+		} else {
+			return "", fmt.Errorf("unsupported type: %s", v.Kind())
+		}
 	default:
-		newValue, _ := json.Marshal(value)
-		str = string(newValue)
+		bytes, _ := json.Marshal(value)
+		return string(bytes), nil
 	}
-	return str
 }
 
 // SplitStrToSubStrArr 字符串根据长度切割为字符串数组

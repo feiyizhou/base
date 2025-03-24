@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/feiyizhou/comm-components/utils"
+	"github.com/feiyizhou/base/utils"
 	"github.com/gin-gonic/gin"
 )
 
