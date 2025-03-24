@@ -11,6 +11,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/google/uuid"
 )
 
 var (
@@ -20,6 +22,10 @@ var (
 
 func init() {
 	rand.New(rand.NewSource(time.Now().UnixNano()))
+}
+
+func RandUUIDStr() string {
+	return uuid.NewString() // 输出类似 63719109-0989-49e9-b339-a7e6d04c3507
 }
 
 func DeleteSpecialChar(str string) string {
@@ -52,7 +58,7 @@ func ValueMd5(value any) (string, error) {
 func RandCharStr(n int) string {
 	result := make([]byte, n)
 	//r := rand.New(rand.NewSource(time.Now().UnixNano()))
-	for i := 0; i < n; i++ {
+	for i := range n {
 		result[i] = CharArr[rand.Int31()%int32(len(CharArr))]
 	}
 	return string(result)
