@@ -20,7 +20,6 @@ require (
 	github.com/ulule/limiter/v3 v3.11.2
 	go.mongodb.org/mongo-driver v1.17.3
 	go.uber.org/zap v1.27.0
-	gopkg.in/natefinch/lumberjack.v2 v2.2.1
 	gorm.io/driver/mysql v1.5.7
 	gorm.io/gorm v1.26.0
 )
