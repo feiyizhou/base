@@ -2,7 +2,6 @@ package clients
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"runtime"
 	"time"
@@ -20,15 +19,10 @@ type RedisConf struct {
 	PoolTimeout  int    `json:"poolTimeout" mapstructure:"poolTimeout"`
 }
 
-type RedisClient struct {
-	ctx    context.Context
-	Client *redis.Client
-}
-
-func NewRedisClient(ctx context.Context, conf RedisConf) (*RedisClient, error) {
+func NewRedisDB(conf RedisConf) *redis.Client {
 	var (
-		rdb *redis.Client
 		err error
+		rdb *redis.Client
 	)
 	rdb = redis.NewClient(&redis.Options{
 		Addr:     conf.Addr,
@@ -43,41 +37,53 @@ func NewRedisClient(ctx context.Context, conf RedisConf) (*RedisClient, error) {
 		ReadTimeout:  time.Duration(conf.ReadTimeout) * time.Second,
 		PoolTimeout:  time.Duration(conf.PoolTimeout) * time.Second,
 	})
-	_, err = rdb.Ping(ctx).Result()
+	_, err = rdb.Ping(context.Background()).Result()
 	if err != nil {
-		return nil, errors.New(fmt.Sprintf("Connect to redis clients failed, err: %v", err))
+		panic(fmt.Errorf("connect to redis clients failed, err: %v", err))
 	}
-	return &RedisClient{ctx: ctx, Client: rdb}, err
+	return rdb
 }
 
-func (rd *RedisClient) Set(key string, val interface{}, expire int) error {
-	return rd.Client.Set(rd.ctx, key, val, time.Duration(expire)*time.Second).Err()
+type RedisClient struct {
+	ctx context.Context
+	db  *redis.Client
 }
 
-func (rd *RedisClient) Get(key string) (string, error) {
-	return rd.Client.Get(rd.ctx, key).Result()
+func NewRedisClient(ctx context.Context, cfg RedisConf) *RedisClient {
+	return &RedisClient{
+		ctx: ctx,
+		db:  NewRedisDB(cfg),
+	}
 }
 
-func (rd *RedisClient) Del(key string) (int64, error) {
-	return rd.DelAll([]string{key}...)
+func (rc *RedisClient) Set(key string, val any, expire int) error {
+	return rc.db.Set(rc.ctx, key, val, time.Duration(expire)*time.Second).Err()
 }
 
-func (rd *RedisClient) DelAll(keys ...string) (int64, error) {
-	return rd.Client.Del(rd.ctx, keys...).Result()
+func (rc *RedisClient) Get(key string) (string, error) {
+	return rc.db.Get(rc.ctx, key).Result()
 }
 
-func (rd *RedisClient) HSet(key string, values ...interface{}) error {
-	return rd.Client.HSet(rd.ctx, key, values...).Err()
+func (rc *RedisClient) Del(key string) (int64, error) {
+	return rc.DelAll([]string{key}...)
 }
 
-func (rd *RedisClient) HGet(key, field string) (string, error) {
-	return rd.Client.HGet(rd.ctx, key, field).Result()
+func (rc *RedisClient) DelAll(keys ...string) (int64, error) {
+	return rc.db.Del(rc.ctx, keys...).Result()
 }
 
-func (rd *RedisClient) HDel(key, field string) (int64, error) {
-	return rd.HDelAll(key, []string{field}...)
+func (rc *RedisClient) HSet(key string, values ...any) error {
+	return rc.db.HSet(rc.ctx, key, values...).Err()
 }
 
-func (rd *RedisClient) HDelAll(key string, fields ...string) (int64, error) {
-	return rd.Client.HDel(rd.ctx, key, fields...).Result()
+func (rc *RedisClient) HGet(key, field string) (string, error) {
+	return rc.db.HGet(rc.ctx, key, field).Result()
+}
+
+func (rc *RedisClient) HDel(key, field string) (int64, error) {
+	return rc.HDelAll(key, []string{field}...)
+}
+
+func (rc *RedisClient) HDelAll(key string, fields ...string) (int64, error) {
+	return rc.db.HDel(rc.ctx, key, fields...).Result()
 }

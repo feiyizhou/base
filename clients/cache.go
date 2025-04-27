@@ -12,7 +12,7 @@ type Memory struct {
 }
 
 type data struct {
-	Data    interface{}
+	Data    any
 	Expired *time.Time
 }
 
@@ -24,7 +24,7 @@ func NewMemory() *Memory {
 }
 
 // Get return cached value
-func (mem *Memory) Get(key string) interface{} {
+func (mem *Memory) Get(key string) any {
 	if ret, ok := mem.data[key]; ok {
 		if ret.Expired != nil && ret.Expired.Before(time.Now()) {
 			mem.deleteKey(key)
@@ -48,7 +48,7 @@ func (mem *Memory) IsExist(key string) bool {
 }
 
 // Set cached value with key and expire time.
-func (mem *Memory) Set(key string, val interface{}, timeout *time.Duration) {
+func (mem *Memory) Set(key string, val any, timeout *time.Duration) {
 	mem.Lock()
 	defer mem.Unlock()
 	value := &data{Data: val}
@@ -57,7 +57,6 @@ func (mem *Memory) Set(key string, val interface{}, timeout *time.Duration) {
 		value.Expired = &expired
 	}
 	mem.data[key] = value
-	return
 }
 
 // Delete delete value in mem cache.

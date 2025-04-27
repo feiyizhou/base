@@ -43,11 +43,7 @@ func DeleteSpecialChar(str string) string {
 
 func ValueMd5(value any) (string, error) {
 	h := md5.New()
-	str, err := InterfaceToStr(value)
-	if err != nil {
-		return "", err
-	}
-	_, err = io.WriteString(h, str)
+	_, err = io.WriteString(h, InterfaceToStr(value))
 	if err != nil {
 		return "", err
 	}
@@ -75,36 +71,46 @@ func RandNumStr(n int) string {
 }
 
 // InterfaceToStr interface转string
-func InterfaceToStr(value interface{}) (string, error) {
+func InterfaceToStr(value interface{}) string {
 	// interface 转 string
 	var str string
 	if value == nil {
-		return str, nil
+		return ""
 	}
-	v := reflect.ValueOf(value)
-	switch v.Kind() {
-	case reflect.Float64, reflect.Float32:
-		return fmt.Sprintf("%f", v.Float()), nil
-	case reflect.Int, reflect.Uint,
-		reflect.Int8, reflect.Uint8,
-		reflect.Int16, reflect.Uint16,
-		reflect.Int32, reflect.Uint32,
-		reflect.Int64, reflect.Uint64:
-		return fmt.Sprintf("%d", v.Int()), nil
-	case reflect.String:
-		return v.String(), nil
-	case reflect.Bool:
-		return fmt.Sprintf("%t", v.Bool()), nil
-	case reflect.Slice:
-		if v.Type().Elem().Kind() == reflect.Uint8 {
-			return string(v.Bytes()), nil
-		} else {
-			return "", fmt.Errorf("unsupported type: %s", v.Kind())
-		}
+	switch value := value.(type) {
+	case float64:
+		str = strconv.FormatFloat(value, 'f', -1, 64)
+	case float32:
+		str = strconv.FormatFloat(float64(value), 'f', -1, 32)
+	case int:
+		str = strconv.Itoa(value)
+	case uint:
+		str = strconv.FormatUint(uint64(value), 10)
+	case int8:
+		str = strconv.Itoa(int(value))
+	case uint8:
+		str = strconv.FormatUint(uint64(value), 10)
+	case int16:
+		str = strconv.Itoa(int(value))
+	case uint16:
+		str = strconv.FormatUint(uint64(value), 10)
+	case int32:
+		str = strconv.Itoa(int(value))
+	case uint32:
+		str = strconv.FormatUint(uint64(value), 10)
+	case int64:
+		str = strconv.FormatInt(value, 10)
+	case uint64:
+		str = strconv.FormatUint(value, 10)
+	case string:
+		str = value
+	case []byte:
+		str = string(value)
 	default:
 		bytes, _ := json.Marshal(value)
-		return string(bytes), nil
+		return string(bytes)
 	}
+	return str
 }
 
 // SplitStrToSubStrArr 字符串根据长度切割为字符串数组

@@ -1,9 +1,10 @@
 package logger
 
 import (
+	"os"
+
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
-	"gopkg.in/natefinch/lumberjack.v2"
 )
 
 type LogConf struct {
@@ -15,71 +16,78 @@ type LogConf struct {
 	Compress   bool   `json:"compress" mapstructure:"compress"`
 }
 
-// InitLogger 初始化Logger
-func InitLogger(cfg LogConf) error {
-	writeSyncer := getLogWriter(cfg.Filename, cfg.MaxSize, cfg.MaxBackups, cfg.MaxAge, cfg.Compress)
-	encoder := getEncoder()
-	var level = new(zapcore.Level)
-	err := level.UnmarshalText([]byte(cfg.Level))
-	if err != nil {
-		return err
+// InitLogger init logger
+func InitLogger(cfg LogConf) {
+	encoderConfig := zapcore.EncoderConfig{
+		TimeKey:       "time",
+		LevelKey:      "level",
+		NameKey:       "logger",
+		CallerKey:     "caller",
+		MessageKey:    "msg",
+		StacktraceKey: "stack",
+		LineEnding:    zapcore.DefaultLineEnding,
+		EncodeTime:    zapcore.ISO8601TimeEncoder,
+		EncodeLevel:   zapcore.CapitalLevelEncoder,
+		EncodeCaller:  zapcore.ShortCallerEncoder,
 	}
-	core := zapcore.NewCore(encoder, writeSyncer, level)
-	logger := zap.New(core, zap.AddCaller())
+	core := zapcore.NewCore(
+		zapcore.NewJSONEncoder(encoderConfig),
+		zapcore.AddSync(os.Stdout),
+		parseLogLevel(cfg.Level),
+	)
+	logger := zap.New(core, zap.AddStacktrace(zap.PanicLevel))
 	zap.ReplaceGlobals(logger)
-	return err
 }
 
-func getEncoder() zapcore.Encoder {
-	encoderConfig := zap.NewProductionEncoderConfig()
-	encoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
-	encoderConfig.TimeKey = "time"
-	encoderConfig.EncodeLevel = zapcore.CapitalLevelEncoder
-	encoderConfig.EncodeDuration = zapcore.SecondsDurationEncoder
-	encoderConfig.EncodeCaller = zapcore.ShortCallerEncoder
-	return zapcore.NewJSONEncoder(encoderConfig)
-}
-
-func getLogWriter(filename string, maxSize, maxBackup, maxAge int, compress bool) zapcore.WriteSyncer {
-	lumberJackLogger := &lumberjack.Logger{
-		Filename:   filename,
-		MaxSize:    maxSize,
-		MaxBackups: maxBackup,
-		MaxAge:     maxAge,
-		Compress:   compress,
+func parseLogLevel(levelStr string) zapcore.Level {
+	switch levelStr {
+	case "debug", "DEBUG":
+		return zapcore.DebugLevel
+	case "info", "INFO":
+		return zapcore.InfoLevel
+	case "warn", "WARN":
+		return zapcore.WarnLevel
+	case "error", "ERROR":
+		return zapcore.ErrorLevel
+	case "dpanic", "DPANIC":
+		return zapcore.DPanicLevel
+	case "panic", "PANIC":
+		return zapcore.PanicLevel
+	case "fatal", "FATAL":
+		return zapcore.FatalLevel
+	default:
+		return zapcore.InfoLevel
 	}
-	syncFile := zapcore.AddSync(lumberJackLogger)
-	return zapcore.AddSync(syncFile)
 }
 
-func Debug(args ...interface{}) {
-	zap.L().Sugar().Debugln(args)
+func Debug(args ...any) {
+	zap.L().Sugar().Debug(args...)
 }
 
-func Info(args ...interface{}) {
-	zap.L().Sugar().Infoln(args)
+func Info(args ...any) {
+	zap.L().Sugar().Infoln(args...)
 }
 
-func Warn(args ...interface{}) {
-	zap.L().Sugar().Warnln(args)
+func Warn(args ...any) {
+	zap.L().Sugar().Warnln(args...)
 }
 
-func Error(args ...interface{}) {
-	zap.L().Sugar().Errorln(args)
+func Error(args ...any) {
+	zap.L().Sugar().Errorln(args...)
 }
 
-func Debugf(template string, args ...interface{}) {
-	zap.L().Sugar().Debugf(template, args)
+func Debugf(template string, args ...any) {
+	zap.L().Sugar().Debugf(template, args...)
 }
 
-func Infof(template string, args ...interface{}) {
-	zap.L().Sugar().Infof(template, args)
+func Infof(template string, args ...any) {
+	zap.L().Sugar().Infof(template, args...)
 }
 
-func Warnf(template string, args ...interface{}) {
-	zap.L().Sugar().Warnf(template, args)
+func Warnf(template string, args ...any) {
+	zap.L().Sugar().Warnf(template, args...)
 }
 
-func Errorf(template string, args ...interface{}) {
-	zap.L().Sugar().Errorf(template, args)
+func Errorf(template string, args ...any) {
+	zap.L().Sugar().Errorf(template, args...)
 }

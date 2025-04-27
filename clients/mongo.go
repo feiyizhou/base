@@ -2,7 +2,6 @@ package clients
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"runtime"
 	"time"
@@ -21,12 +20,7 @@ type MongoConf struct {
 	ReplSetName    string `json:"replSetName" mapstructure:"replSetName"`
 }
 
-type MongoClient struct {
-	ctx context.Context
-	DB  *mongo.Database
-}
-
-func NewMongoClient(ctx context.Context, conf MongoConf) (*MongoClient, error) {
+func NewMongoDB(ctx context.Context, conf MongoConf) *mongo.Database {
 	clientOpts := options.Client().
 		SetAuth(options.Credential{
 			AuthMechanism: "SCRAM-SHA-1",
@@ -46,11 +40,11 @@ func NewMongoClient(ctx context.Context, conf MongoConf) (*MongoClient, error) {
 
 	cli, err := mongo.Connect(ctx, clientOpts)
 	if err != nil {
-		return nil, errors.New(fmt.Sprintf("Connect to mongo failed, err: %v", err))
+		panic(fmt.Errorf("connect to mongo failed, err: %v", err))
 	}
 	err = cli.Ping(ctx, nil)
 	if err != nil {
-		return nil, errors.New(fmt.Sprintf("Ping mongo failed, err: %v", err))
+		panic(fmt.Errorf("ping mongo failed, err: %v", err))
 	}
-	return &MongoClient{ctx: ctx, DB: cli.Database(conf.Database)}, err
+	return cli.Database(conf.Database)
 }
