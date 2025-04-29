@@ -17,11 +17,12 @@ type ESConf struct {
 	Password string `json:"password" mapstructure:"password"`
 }
 
-func NewESClient(ctx context.Context, conf ESConf) *elastic.Client {
+func NewESClient(conf ESConf) *elastic.Client {
+	url := fmt.Sprintf("http://%s:%d", conf.Host, conf.Port)
 	opts := []elastic.ClientOptionFunc{
 		elastic.SetHealthcheckInterval(10 * time.Second),
 		elastic.SetSniff(false),
-		elastic.SetURL(fmt.Sprintf("http://%s:%d", conf.Host, conf.Port)),
+		elastic.SetURL(url),
 		elastic.SetGzip(false),
 		elastic.SetErrorLog(log.New(os.Stderr, "ELASTIC", log.LstdFlags)),
 		elastic.SetInfoLog(log.New(os.Stdout, "", log.LstdFlags)),
@@ -31,5 +32,10 @@ func NewESClient(ctx context.Context, conf ESConf) *elastic.Client {
 	if err != nil {
 		panic(err)
 	}
+	info, code, err := client.Ping(url).Do(context.Background())
+	if err != nil {
+		panic(fmt.Errorf("error pinging Elasticsearch: %v", err))
+	}
+	fmt.Printf("elasticsearch returned with code %d and version %s\n", code, info.Version.Number)
 	return client
 }
