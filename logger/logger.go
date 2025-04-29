@@ -7,17 +7,8 @@ import (
 	"go.uber.org/zap/zapcore"
 )
 
-type LogConf struct {
-	Level      string `json:"level" mapstructure:"level"`
-	Filename   string `json:"filename" mapstructure:"filename"`
-	MaxSize    int    `json:"maxSize" mapstructure:"maxSize"`
-	MaxAge     int    `json:"maxAge" mapstructure:"maxAge"`
-	MaxBackups int    `json:"maxBackups" mapstructure:"maxBackups"`
-	Compress   bool   `json:"compress" mapstructure:"compress"`
-}
-
 // InitLogger init logger
-func InitLogger(cfg LogConf) {
+func InitLogger(level string) {
 	encoderConfig := zapcore.EncoderConfig{
 		TimeKey:       "time",
 		LevelKey:      "level",
@@ -33,7 +24,7 @@ func InitLogger(cfg LogConf) {
 	core := zapcore.NewCore(
 		zapcore.NewJSONEncoder(encoderConfig),
 		zapcore.AddSync(os.Stdout),
-		parseLogLevel(cfg.Level),
+		parseLogLevel(level),
 	)
 	logger := zap.New(core, zap.AddStacktrace(zap.PanicLevel))
 	zap.ReplaceGlobals(logger)
