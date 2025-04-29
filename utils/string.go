@@ -191,3 +191,8 @@ func Base64Decode(content string) (string, error) {
 	}
 	return string(decodeContent), err
 }
+
+func ObjToJsonStr(obj any) string {
+	objBytes, _ := json.Marshal(obj)
+	return string(objBytes)
+}
