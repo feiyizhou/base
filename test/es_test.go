@@ -5,8 +5,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/feiyizhou/base/clients"
+	"github.com/feiyizhou/base/utils"
 	"github.com/olivere/elastic/v7"
 )
 
@@ -48,9 +50,9 @@ type Properties struct {
 func init() {
 	es = clients.NewESClient(clients.ESConf{
 		Host:     "172.16.200.18",
-		Port:     32253,
+		Port:     31172,
 		User:     "admin",
-		Password: "U29iZXkxMjMK",
+		Password: "Sobey123",
 	})
 	mappingBytes, _ := json.Marshal(IndexMapping{
 		Settings: IndexSettings{
@@ -122,18 +124,21 @@ func Test_ES_All_Idx(t *testing.T) {
 }
 
 func Test_ES_Create_Data(t *testing.T) {
-	resp, err := es.Index().Index(indexName).BodyJson(Document{
-		ID:       1,
-		Title:    "zhangsan",
-		Authors:  []string{"张三"},
-		Year:     1,
-		Abstract: "张三李四王麻子",
-	}).Do(context.Background())
-	if err != nil {
-		fmt.Printf("error indexing document: %v", err)
-		return
+	for i := range 100 {
+		resp, err := es.Index().Index(indexName).BodyJson(Document{
+			ID:       i,
+			Title:    fmt.Sprintf("wangmazi-%d", i),
+			Authors:  []string{utils.RandUUIDStr()},
+			Year:     i,
+			Abstract: fmt.Sprintf("张三李四王麻子-%d", i),
+		}).Do(context.Background())
+		if err != nil {
+			fmt.Printf("error indexing document: %v", err)
+			return
+		}
+		fmt.Println(resp.Id)
+		time.Sleep(10 * time.Second)
 	}
-	fmt.Println(resp.Id)
 }
 
 func Test_ES_Query_By_ID(t *testing.T) {

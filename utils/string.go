@@ -16,16 +16,23 @@ import (
 )
 
 var (
-	CharArr = []byte("ABCDEFGHIJKLMNOPQRSTUVWXYZ")
-	NumArr  = []byte("1234567890")
+	UpperCaseCharArr = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+	LowerCaseCharArr = "abcdefghijklmnopqrstuwwxyz"
+	NumCharArr       = "1234567890"
+	AllCharArr       = "1234567890abcdefghijklmnopqrstuwwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 )
-
-func init() {
-	rand.New(rand.NewSource(time.Now().UnixNano()))
-}
 
 func RandUUIDStr() string {
 	return uuid.NewString() // 输出类似 63719109-0989-49e9-b339-a7e6d04c3507
+}
+
+func RandStr(n int, charArr string) string {
+	rand.New(rand.NewSource(time.Now().UnixNano()))
+	sb := strings.Builder{}
+	for range n {
+		sb.WriteByte(charArr[rand.Int31()%int32(len(charArr))])
+	}
+	return sb.String()
 }
 
 func DeleteSpecialChar(str string) string {
@@ -50,28 +57,8 @@ func ValueMd5(value any) (string, error) {
 	return fmt.Sprintf("%x", h.Sum(nil)), nil
 }
 
-// RandCharStr 生成随机字符串
-func RandCharStr(n int) string {
-	result := make([]byte, n)
-	//r := rand.New(rand.NewSource(time.Now().UnixNano()))
-	for i := range n {
-		result[i] = CharArr[rand.Int31()%int32(len(CharArr))]
-	}
-	return string(result)
-}
-
-// RandNumStr 生成随机数字串
-func RandNumStr(n int) string {
-	result := make([]byte, n)
-	//r := rand.New(rand.NewSource(time.Now().UnixNano()))
-	for i := range n {
-		result[i] = NumArr[rand.Int31()%int32(len(NumArr))]
-	}
-	return string(result)
-}
-
 // InterfaceToStr interface转string
-func InterfaceToStr(value interface{}) string {
+func InterfaceToStr(value any) string {
 	// interface 转 string
 	var str string
 	if value == nil {
