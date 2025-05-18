@@ -47,7 +47,7 @@ type Properties struct {
 	Analyzer string `json:"analyzer,omitempty"`
 }
 
-func init() {
+func initES() {
 	es = clients.NewESClient(clients.ESConf{
 		Host:     "172.16.200.18",
 		Port:     31172,
@@ -73,6 +73,7 @@ func init() {
 }
 
 func Test_ES_Create_Idx(t *testing.T) {
+	initES()
 	exists, err := es.IndexExists(indexName).Do(context.Background())
 	if err != nil {
 		fmt.Printf("Error checking if index exists: %v", err)
@@ -96,6 +97,7 @@ func Test_ES_Create_Idx(t *testing.T) {
 }
 
 func Test_ES_Delete_Idx(t *testing.T) {
+	initES()
 	exists, err := es.IndexExists(indexName).Do(context.Background())
 	if err != nil {
 		fmt.Printf("Error checking if index exists: %v", err)
@@ -112,6 +114,7 @@ func Test_ES_Delete_Idx(t *testing.T) {
 }
 
 func Test_ES_All_Idx(t *testing.T) {
+	initES()
 	indices, err := es.CatIndices().Do(context.Background())
 	if err != nil {
 		fmt.Printf("Error getting indices: %v", err)
@@ -124,6 +127,7 @@ func Test_ES_All_Idx(t *testing.T) {
 }
 
 func Test_ES_Create_Data(t *testing.T) {
+	initES()
 	for i := range 100 {
 		resp, err := es.Index().Index(indexName).BodyJson(Document{
 			ID:       i,
@@ -142,6 +146,7 @@ func Test_ES_Create_Data(t *testing.T) {
 }
 
 func Test_ES_Query_By_ID(t *testing.T) {
+	initES()
 	getResp, err := es.Get().
 		Index(indexName).
 		Id("aF76epYBet1VMiAEs7bV").
@@ -163,6 +168,7 @@ func Test_ES_Query_By_ID(t *testing.T) {
 }
 
 func Test_ES_List(t *testing.T) {
+	initES()
 	query := elastic.NewBoolQuery()
 	// query.Must(elastic.NewMatchQuery("title", "zhangsan"))
 	searchResult, err := es.Search().
@@ -190,6 +196,7 @@ func Test_ES_List(t *testing.T) {
 }
 
 func Test_ES_Delete_By_Id(t *testing.T) {
+	initES()
 	resp, err := es.Delete().
 		Index(indexName).
 		Id("Zl75epYBet1VMiAEY7aR").
@@ -202,6 +209,7 @@ func Test_ES_Delete_By_Id(t *testing.T) {
 }
 
 func Test_ES_Delete_By_Query(t *testing.T) {
+	initES()
 	query := elastic.NewBoolQuery()
 	query.Must(elastic.NewMatchQuery("title", "zhangsan"))
 	resp, err := es.DeleteByQuery().
