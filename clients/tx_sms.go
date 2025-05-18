@@ -1,13 +1,12 @@
 package clients
 
 import (
-	"errors"
 	"fmt"
 
 	"github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common"
 	txErrors "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common/errors"
 	"github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common/profile"
-	sms "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/sms/v20210111" // 引入sms
+	sms "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/sms/v20210111"
 )
 
 type TencentSMSConf struct {
@@ -43,7 +42,7 @@ func NewTXSMSClient(conf TencentSMSConf) (*TXSMSClient, error) {
 	cpf.SignMethod = "HmacSHA1"
 	client, err := sms.NewClient(credential, conf.Region, cpf)
 	if err != nil {
-		return nil, errors.New(fmt.Sprintf("Init Tencent sms clients failed, err: %v", err))
+		return nil, fmt.Errorf("init Tencent sms clients failed, err: %v", err)
 	}
 	return &TXSMSClient{
 		Client:     client,

@@ -3,9 +3,11 @@ package clients
 import (
 	"context"
 	"fmt"
+	"log"
 	"runtime"
 	"time"
 
+	"go.mongodb.org/mongo-driver/event"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.mongodb.org/mongo-driver/mongo/readpref"
@@ -20,7 +22,7 @@ type MongoConf struct {
 	ReplSetName    string `json:"replSetName" mapstructure:"replSetName"`
 }
 
-func NewMongoDB(ctx context.Context, conf MongoConf) *mongo.Database {
+func NewMongoDB(ctx context.Context, conf MongoConf, monitor bool) *mongo.Database {
 	clientOpts := options.Client().
 		SetAuth(options.Credential{
 			AuthMechanism: "SCRAM-SHA-1",
@@ -34,6 +36,23 @@ func NewMongoDB(ctx context.Context, conf MongoConf) *mongo.Database {
 		SetMinPoolSize(uint64(runtime.NumCPU())).
 		SetReadPreference(readpref.Primary()).
 		SetDirect(true)
+	if monitor {
+		clientOpts.SetMonitor(&event.CommandMonitor{
+			Started: func(ctx context.Context, e *event.CommandStartedEvent) {
+				log.Printf("MongoDB operate command: \ncommand type: %s \nfull command: %s \ndatabase: %s\n",
+					e.CommandName,
+					e.Command.String(),
+					e.DatabaseName,
+				)
+			},
+			Succeeded: func(ctx context.Context, e *event.CommandSucceededEvent) {
+				log.Printf("operate success, time consuming: %d milliseconds\n", e.Duration.Milliseconds())
+			},
+			Failed: func(ctx context.Context, e *event.CommandFailedEvent) {
+				log.Printf("operate failed, err: %s\n", e.Failure)
+			},
+		})
+	}
 	if len(conf.ReplSetName) != 0 {
 		clientOpts.SetReplicaSet(conf.ReplSetName)
 	}

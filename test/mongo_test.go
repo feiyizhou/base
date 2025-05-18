@@ -18,7 +18,7 @@ func initMongoDB() {
 		Password:       "feiyizhou7816",
 		ConnectTimeout: 15,
 		ReplSetName:    "rs0",
-	})
+	}, true)
 }
 
 func Test_Mongo(t *testing.T) {
