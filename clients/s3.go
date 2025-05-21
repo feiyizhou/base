@@ -2,6 +2,7 @@ package clients
 
 import (
 	"bytes"
+	"os"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
@@ -45,6 +46,28 @@ func (cli *s3Client) UploadObject(bucket, fullpath string, data []byte) error {
 		return err
 	}
 	logger.Infof("upload object to s3 success, uploadID: %s", result.UploadID)
+	return nil
+}
+
+func (cli *s3Client) DownloadObject(bucket, srcFullpath, desFullpath string) error {
+	file, err := os.Create(desFullpath)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	downloader := s3manager.NewDownloader(cli.sess, func(u *s3manager.Downloader) {
+		u.PartSize = 10 * 1024 * 1024
+		u.Concurrency = 5
+	})
+	numBytes, err := downloader.Download(file, &s3.GetObjectInput{
+		Bucket: aws.String(bucket),
+		Key:    aws.String(srcFullpath),
+	})
+	if err != nil {
+		return err
+	}
+	logger.Infof("download object from s3 %s to %s success, file size: %d\n", srcFullpath, desFullpath, numBytes)
 	return nil
 }
 
