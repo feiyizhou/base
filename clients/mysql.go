@@ -67,6 +67,7 @@ func NewMySqlDB(cfg MySqlConf) *gorm.DB {
 	if err != nil {
 		panic(err)
 	}
+	defer sqlDB.Close()
 	sqlDB.SetMaxIdleConns(5)
 	sqlDB.SetMaxOpenConns(15)
 	sqlDB.SetConnMaxIdleTime(time.Hour)
