@@ -4,8 +4,10 @@ import (
 	"context"
 	"fmt"
 	"runtime"
+	"strings"
 	"time"
 
+	"github.com/feiyizhou/base/logger"
 	"github.com/redis/go-redis/v9"
 )
 
@@ -86,4 +88,54 @@ func (rc *RedisClient) HDel(key, field string) (int64, error) {
 
 func (rc *RedisClient) HDelAll(key string, fields ...string) (int64, error) {
 	return rc.db.HDel(rc.ctx, key, fields...).Result()
+}
+
+func (rc *RedisClient) PublishToStream(ctx context.Context, topic string, msg map[string]any) (string, error) {
+	return rc.db.XAdd(ctx, &redis.XAddArgs{
+		Stream: topic,
+		Values: msg,
+	}).Result()
+}
+
+func (rc *RedisClient) CreateConsumerGroup(ctx context.Context, topic, group string) error {
+	var (
+		err error
+	)
+	if err = rc.db.XGroupCreateMkStream(ctx, topic, group, "0").Err(); err != nil {
+		if strings.Contains(err.Error(), "BUSYGROUP") {
+			logger.Warnf("consumer group %s in stream %s already exists", group, topic)
+			return nil
+		}
+		logger.Errorf("create consumer group %s in stream %s failed, err: %v", group, topic, err)
+		return err
+	}
+	logger.Infof("create consumer group %s in stream %s success", group, topic)
+	return nil
+}
+
+func (rc *RedisClient) ReadFromStream(ctx context.Context, topic, group, consumer string, count, block int64) ([]redis.XMessage, error) {
+	streams, err := rc.db.XReadGroup(ctx, &redis.XReadGroupArgs{
+		Group:    group,
+		Consumer: consumer,
+		Streams:  []string{topic, ">"},
+		Count:    count,
+		Block:    time.Duration(block) * time.Second,
+	}).Result()
+	if err != nil {
+		if err == redis.Nil {
+			fmt.Printf("no new message in stream %s\n", topic)
+			return nil, nil
+		}
+		fmt.Printf("read from stream %s failed, err: %v\n", topic, err)
+		return nil, err
+	}
+	if len(streams) == 0 {
+		fmt.Printf("no new message in stream %s\n", topic)
+		return nil, nil
+	}
+	return streams[0].Messages, nil
+}
+
+func (rc *RedisClient) AckMessage(ctx context.Context, topic, group string, ids ...string) error {
+	return rc.db.XAck(ctx, topic, group, ids...).Err()
 }
