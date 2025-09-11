@@ -92,8 +92,11 @@ func (rc *RedisClient) HDelAll(key string, fields ...string) (int64, error) {
 
 func (rc *RedisClient) PublishToStream(ctx context.Context, topic string, msg map[string]any) (string, error) {
 	return rc.db.XAdd(ctx, &redis.XAddArgs{
-		Stream: topic,
-		Values: msg,
+		Stream:     topic,
+		NoMkStream: false,
+		Approx:     true,
+		MaxLen:     10000,
+		Values:     msg,
 	}).Result()
 }
 
